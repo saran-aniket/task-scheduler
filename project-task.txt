@@ -1,0 +1,25 @@
+1. SpringBoot @Scheduled annotation and problems in distributed architecture
+2. Task Definition Model and Persistence
+3. Rest API for Task CRUD
+4. Dynamic Scheduling
+5. Distributed locking (DB and Redis Approach)
+6. Redlock Algorithm & Leader Election Design
+7. Implementing Leader Election & Failover
+8. Spring Cloud Coordination & Idempotency
+9. Task Execution Tracking & Status Management
+10. Error Handling, Retries & Exponential Backoff
+11. Dead Letter Queues & Circuit Breaker Pattern
+12. Async Execution, Timeouts & Graceful Shutdown
+13. Kafka/RabbitMQ Setup & Task Queue Integration
+14. Building & Scaling Task Consumers
+15. Task Prioritization, Backpressure & Batching
+16. Event-Driven Scheduling & Scheduler as a Service
+17. Structured Logging & Micrometer Metrics
+18. Prometheus, Grafana & Alerting
+19. Centralized Logging & Task Management API
+20. UI Integration, Security & Testing
+21. Chaos Engineering
+22. Kubernetes, Docker & Helm Deployment (Days 51–53)
+23. Time Zones, Cron Validation & Multi-Tenancy (Days 54–56)
+24. Serverless Integration & Performance Tuning (Days 57–58)
+25. Future Trends & Course Wrap-up (Days 59–60)

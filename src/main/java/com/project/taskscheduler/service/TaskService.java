@@ -23,24 +23,24 @@ public class TaskService {
     private void initializeDefaultTasks() {
         Task healthCheck = new Task("System Health Check", "Performs system health monitoring",
                 Task.TaskType.FIXED_RATE, "5000");
-        healthCheck.setId("task-1");
+//        healthCheck.setId("task-1");
         healthCheck.setLastRun(LocalDateTime.now().minusMinutes(2));
         healthCheck.setNextRun(LocalDateTime.now().plusMinutes(3));
-        tasks.put(healthCheck.getId(), healthCheck);
+//        tasks.put(healthCheck.getId(), healthCheck);
 
         Task cleanup = new Task("System Cleanup", "Cleans up temporary files and logs",
                 Task.TaskType.FIXED_DELAY, "15000");
-        cleanup.setId("task-2");
+//        cleanup.setId("task-2");
         cleanup.setLastRun(LocalDateTime.now().minusMinutes(1));
         cleanup.setNextRun(LocalDateTime.now().plusMinutes(14));
-        tasks.put(cleanup.getId(), cleanup);
+//        tasks.put(cleanup.getId(), cleanup);
 
         Task reports = new Task("Daily Report Generation", "Generates daily system reports",
                 Task.TaskType.CRON, "0 * * * * *");
-        reports.setId("task-3");
+//        reports.setId("task-3");
         reports.setLastRun(LocalDateTime.now().minusSeconds(30));
         reports.setNextRun(LocalDateTime.now().plusSeconds(30));
-        tasks.put(reports.getId(), reports);
+//        tasks.put(reports.getId(), reports);
     }
 
     public List<Task> getAllTasks() {
@@ -53,8 +53,8 @@ public class TaskService {
 
     public Task createTask(Task task) {
         String id = "task-" + taskIdCounter.getAndIncrement();
-        task.setId(id);
-        task.setCreatedAt(LocalDateTime.now());
+//        task.setId(id);
+//        task.setCreatedAt(LocalDateTime.now());
         task.setStatus(Task.TaskStatus.ACTIVE);
         task.setActive(true);
 

@@ -1,7 +1,7 @@
 1. SpringBoot @Scheduled annotation and problems in distributed architecture
 2. Task Definition Model and Persistence
 3. Rest API for Task CRUD
-4. Dynamic Scheduling
+4. Dynamic Scheduling using TaskDefinition
 5. Distributed locking (DB and Redis Approach)
 6. Redlock Algorithm & Leader Election Design
 7. Implementing Leader Election & Failover

@@ -1,60 +1,28 @@
 package com.project.taskscheduler.model;
 
+import jakarta.persistence.Entity;
+
 import java.time.LocalDateTime;
 
-public class Task {
-    private String id;
+@Entity(name = "task-definitions")
+public class Task extends BaseModel {
     private String name;
     private String description;
     private TaskType type;
     private String schedule;
     private boolean active;
-    private LocalDateTime createdAt;
     private LocalDateTime lastRun;
     private LocalDateTime nextRun;
     private TaskStatus status;
 
-    public enum TaskType {
-        FIXED_RATE("Fixed Rate"),
-        FIXED_DELAY("Fixed Delay"),
-        CRON("Cron Expression");
-
-        private final String displayName;
-
-        TaskType(String displayName) {
-            this.displayName = displayName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
-    }
-
-    public enum TaskStatus {
-        ACTIVE("Active"),
-        PAUSED("Paused"),
-        ERROR("Error");
-
-        private final String displayName;
-
-        TaskStatus(String displayName) {
-            this.displayName = displayName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
-    }
-
     // Constructors
     public Task() {
-        this.createdAt = LocalDateTime.now();
         this.status = TaskStatus.ACTIVE;
         this.active = true;
     }
 
     public Task(String name, String description, TaskType type, String schedule) {
-        this();
+        super();
         this.name = name;
         this.description = description;
         this.type = type;
@@ -62,13 +30,6 @@ public class Task {
     }
 
     // Getters and Setters
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getName() {
         return name;
@@ -110,14 +71,6 @@ public class Task {
         this.active = active;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public LocalDateTime getLastRun() {
         return lastRun;
     }
@@ -145,12 +98,44 @@ public class Task {
     @Override
     public String toString() {
         return "Task{" +
-                "id='" + id + '\'' +
+                "id='" + getId() + '\'' +
                 ", name='" + name + '\'' +
                 ", type=" + type +
                 ", schedule='" + schedule + '\'' +
                 ", active=" + active +
                 ", status=" + status +
                 '}';
+    }
+
+    public enum TaskType {
+        FIXED_RATE("Fixed Rate"),
+        FIXED_DELAY("Fixed Delay"),
+        CRON("Cron Expression");
+
+        private final String displayName;
+
+        TaskType(String displayName) {
+            this.displayName = displayName;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+    }
+
+    public enum TaskStatus {
+        ACTIVE("Active"),
+        PAUSED("Paused"),
+        ERROR("Error");
+
+        private final String displayName;
+
+        TaskStatus(String displayName) {
+            this.displayName = displayName;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
     }
 }

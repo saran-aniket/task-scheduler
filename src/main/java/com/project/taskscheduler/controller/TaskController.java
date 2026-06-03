@@ -2,12 +2,14 @@ package com.project.taskscheduler.controller;
 
 import com.project.taskscheduler.model.Task;
 import com.project.taskscheduler.service.TaskService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -25,78 +27,44 @@ public class TaskController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Task> getTaskById(@PathVariable String id) {
-        Task task = taskService.getTaskById(id);
-        if (task != null) {
-            return ResponseEntity.ok(task);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        Task task = taskService.getTaskById(UUID.fromString(id));
+        return ResponseEntity.ok(task);
     }
 
     @PostMapping
-    public ResponseEntity<Task> createTask(@RequestBody Task task) {
-        try {
-            Task createdTask = taskService.createTask(task);
-            return ResponseEntity.ok(createdTask);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<Task> createTask(@Valid @RequestBody Task task) {
+        Task createdTask = taskService.createTask(task);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Task> updateTask(@PathVariable String id, @RequestBody Task task) {
-        try {
-            Task updatedTask = taskService.updateTask(id, task);
-            return ResponseEntity.ok(updatedTask);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<Task> updateTask(
+            @PathVariable String id,
+            @Valid @RequestBody Task task
+    ) {
+        Task updatedTask = taskService.updateTask(id, task);
+        return ResponseEntity.ok(updatedTask);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, String>> deleteTask(@PathVariable String id) {
-        boolean deleted = taskService.deleteTask(id);
-        Map<String, String> response = new HashMap<>();
-
-        if (deleted) {
-            response.put("message", "Task deleted successfully");
-            return ResponseEntity.ok(response);
-        } else {
-            response.put("message", "Task not found");
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Void> deleteTask(@PathVariable String id) {
+        taskService.deleteTask(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/pause")
     public ResponseEntity<Task> pauseTask(@PathVariable String id) {
-        Task task = taskService.pauseTask(id);
-        if (task != null) {
-            return ResponseEntity.ok(task);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(taskService.pauseTask(id));
     }
 
     @PostMapping("/{id}/resume")
     public ResponseEntity<Task> resumeTask(@PathVariable String id) {
-        Task task = taskService.resumeTask(id);
-        if (task != null) {
-            return ResponseEntity.ok(task);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(taskService.resumeTask(id));
     }
 
     @PostMapping("/{id}/execute")
     public ResponseEntity<Task> executeTask(@PathVariable String id) {
-        Task task = taskService.executeTask(id);
-        if (task != null) {
-            return ResponseEntity.ok(task);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(taskService.executeTask(id));
     }
 
     @GetMapping("/active")
@@ -106,12 +74,8 @@ public class TaskController {
 
     @GetMapping("/status/{status}")
     public ResponseEntity<List<Task>> getTasksByStatus(@PathVariable String status) {
-        try {
-            Task.TaskStatus taskStatus = Task.TaskStatus.valueOf(status.toUpperCase());
-            return ResponseEntity.ok(taskService.getTasksByStatus(taskStatus));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        Task.TaskStatus taskStatus = Task.TaskStatus.valueOf(status.toUpperCase());
+        return ResponseEntity.ok(taskService.getTasksByStatus(taskStatus));
     }
 
     @GetMapping("/statistics")

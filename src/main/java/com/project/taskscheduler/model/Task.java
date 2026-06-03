@@ -1,35 +1,57 @@
 package com.project.taskscheduler.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
 
-@Entity(name = "task-definitions")
+@Entity
+@Table(name = "task_definitions")
 public class Task extends BaseModel {
+
+    @NotBlank(message = "Task name is required")
+    @Column(nullable = false)
     private String name;
+
     private String description;
+
+    @NotNull(message = "Task type is required")
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private TaskType type;
+
+    @NotBlank(message = "Task schedule is required")
+    @Column(nullable = false)
     private String schedule;
+
     private boolean active;
+
     private LocalDateTime lastRun;
+
     private LocalDateTime nextRun;
+
+    @NotNull(message = "Task status is required")
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private TaskStatus status;
 
-    // Constructors
     public Task() {
         this.status = TaskStatus.ACTIVE;
         this.active = true;
     }
 
     public Task(String name, String description, TaskType type, String schedule) {
-        super();
+        this();
         this.name = name;
         this.description = description;
         this.type = type;
         this.schedule = schedule;
     }
-
-    // Getters and Setters
 
     public String getName() {
         return name;

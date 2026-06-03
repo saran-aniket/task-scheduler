@@ -1,166 +1,158 @@
 package com.project.taskscheduler.service;
 
+import com.project.taskscheduler.exception.TaskNotFoundException;
 import com.project.taskscheduler.model.Task;
+import com.project.taskscheduler.repository.implementation.TaskRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class TaskService {
 
-    private final Map<String, Task> tasks = new ConcurrentHashMap<>();
-    private final AtomicLong taskIdCounter = new AtomicLong(1);
+    private final TaskRepository taskRepository;
 
-    public TaskService() {
-        // Initialize with some default tasks
-        initializeDefaultTasks();
-    }
-
-    private void initializeDefaultTasks() {
-        Task healthCheck = new Task("System Health Check", "Performs system health monitoring",
-                Task.TaskType.FIXED_RATE, "5000");
-//        healthCheck.setId("task-1");
-        healthCheck.setLastRun(LocalDateTime.now().minusMinutes(2));
-        healthCheck.setNextRun(LocalDateTime.now().plusMinutes(3));
-//        tasks.put(healthCheck.getId(), healthCheck);
-
-        Task cleanup = new Task("System Cleanup", "Cleans up temporary files and logs",
-                Task.TaskType.FIXED_DELAY, "15000");
-//        cleanup.setId("task-2");
-        cleanup.setLastRun(LocalDateTime.now().minusMinutes(1));
-        cleanup.setNextRun(LocalDateTime.now().plusMinutes(14));
-//        tasks.put(cleanup.getId(), cleanup);
-
-        Task reports = new Task("Daily Report Generation", "Generates daily system reports",
-                Task.TaskType.CRON, "0 * * * * *");
-//        reports.setId("task-3");
-        reports.setLastRun(LocalDateTime.now().minusSeconds(30));
-        reports.setNextRun(LocalDateTime.now().plusSeconds(30));
-//        tasks.put(reports.getId(), reports);
+    public TaskService(TaskRepository taskRepository) {
+        this.taskRepository = taskRepository;
     }
 
     public List<Task> getAllTasks() {
-        return new ArrayList<>(tasks.values());
+        return taskRepository.findAll();
     }
 
-    public Task getTaskById(String id) {
-        return tasks.get(id);
+    public Task getTaskById(UUID id) {
+        return taskRepository.findById(id)
+                .orElseThrow(() -> new TaskNotFoundException("Task not found with id: " + id));
     }
 
     public Task createTask(Task task) {
-        String id = "task-" + taskIdCounter.getAndIncrement();
-//        task.setId(id);
-//        task.setCreatedAt(LocalDateTime.now());
-        task.setStatus(Task.TaskStatus.ACTIVE);
-        task.setActive(true);
+        if (task.getStatus() == null) {
+            task.setStatus(Task.TaskStatus.ACTIVE);
+        }
 
-        // Calculate next run based on task type
-        calculateNextRun(task);
+        task.setActive(task.getStatus() == Task.TaskStatus.ACTIVE);
 
-        tasks.put(id, task);
-        return task;
+        if (task.getNextRun() == null) {
+            calculateNextRun(task);
+        }
+
+        return taskRepository.save(task);
     }
 
     public Task updateTask(String id, Task updatedTask) {
-        Task existingTask = tasks.get(id);
-        if (existingTask == null) {
-            throw new IllegalArgumentException("Task not found with id: " + id);
-        }
+        Task existingTask = getTaskById(parseUuid(id));
 
         existingTask.setName(updatedTask.getName());
         existingTask.setDescription(updatedTask.getDescription());
         existingTask.setType(updatedTask.getType());
         existingTask.setSchedule(updatedTask.getSchedule());
-        existingTask.setActive(updatedTask.isActive());
 
-        if (updatedTask.isActive()) {
-            existingTask.setStatus(Task.TaskStatus.ACTIVE);
-        } else {
-            existingTask.setStatus(Task.TaskStatus.PAUSED);
+        if (updatedTask.getStatus() != null) {
+            existingTask.setStatus(updatedTask.getStatus());
+            existingTask.setActive(updatedTask.getStatus() == Task.TaskStatus.ACTIVE);
         }
 
         calculateNextRun(existingTask);
-        return existingTask;
+
+        return taskRepository.save(existingTask);
     }
 
-    public boolean deleteTask(String id) {
-        Task removed = tasks.remove(id);
-        return removed != null;
+    public void deleteTask(String id) {
+        Task task = getTaskById(parseUuid(id));
+        taskRepository.delete(task);
     }
 
     public Task pauseTask(String id) {
-        Task task = tasks.get(id);
-        if (task != null) {
-            task.setActive(false);
-            task.setStatus(Task.TaskStatus.PAUSED);
-        }
-        return task;
+        Task task = getTaskById(parseUuid(id));
+
+        task.setActive(false);
+        task.setStatus(Task.TaskStatus.PAUSED);
+
+        return taskRepository.save(task);
     }
 
     public Task resumeTask(String id) {
-        Task task = tasks.get(id);
-        if (task != null) {
-            task.setActive(true);
-            task.setStatus(Task.TaskStatus.ACTIVE);
-            calculateNextRun(task);
-        }
-        return task;
+        Task task = getTaskById(parseUuid(id));
+
+        task.setActive(true);
+        task.setStatus(Task.TaskStatus.ACTIVE);
+        calculateNextRun(task);
+
+        return taskRepository.save(task);
     }
 
     public Task executeTask(String id) {
-        Task task = tasks.get(id);
-        if (task != null) {
-            task.setLastRun(LocalDateTime.now());
-            calculateNextRun(task);
+        Task task = getTaskById(parseUuid(id));
+
+        task.setLastRun(LocalDateTime.now());
+        calculateNextRun(task);
+
+        return taskRepository.save(task);
+    }
+
+    public List<Task> getActiveTasks() {
+        return taskRepository.findByActiveTrue();
+    }
+
+    public List<Task> getTasksByStatus(Task.TaskStatus status) {
+        return taskRepository.findByStatus(status);
+    }
+
+    public Map<String, Object> getTaskStatistics() {
+        List<Task> tasks = taskRepository.findAll();
+
+        long activeTasks = tasks.stream()
+                .filter(Task::isActive)
+                .count();
+
+        long pausedTasks = tasks.stream()
+                .filter(task -> task.getStatus() == Task.TaskStatus.PAUSED)
+                .count();
+
+        long errorTasks = tasks.stream()
+                .filter(task -> task.getStatus() == Task.TaskStatus.ERROR)
+                .count();
+
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalTasks", tasks.size());
+        stats.put("activeTasks", activeTasks);
+        stats.put("pausedTasks", pausedTasks);
+        stats.put("errorTasks", errorTasks);
+
+        return stats;
+    }
+
+    private UUID parseUuid(String id) {
+        try {
+            return UUID.fromString(id);
+        } catch (IllegalArgumentException e) {
+            throw new TaskNotFoundException("Invalid task id: " + id);
         }
-        return task;
     }
 
     private void calculateNextRun(Task task) {
         LocalDateTime now = LocalDateTime.now();
 
+        if (task.getType() == null || task.getSchedule() == null || task.getSchedule().isBlank()) {
+            return;
+        }
+
         switch (task.getType()) {
-            case FIXED_RATE:
-                // For fixed rate, next run is based on the interval
+            case FIXED_RATE -> {
                 long interval = Long.parseLong(task.getSchedule());
                 task.setNextRun(now.plus(Duration.ofMillis(interval)));
-                break;
-            case FIXED_DELAY:
-                // For fixed delay, next run is after the delay from now
+            }
+            case FIXED_DELAY -> {
                 long delay = Long.parseLong(task.getSchedule());
                 task.setNextRun(now.plus(Duration.ofMillis(delay)));
-                break;
-            case CRON:
-                // For cron, calculate next run based on cron expression
-                // This is a simplified implementation
-                task.setNextRun(now.plusMinutes(1));
-                break;
+            }
+            case CRON -> task.setNextRun(now.plusMinutes(1));
         }
-    }
-
-    public List<Task> getActiveTasks() {
-        return tasks.values().stream()
-                .filter(Task::isActive)
-                .toList();
-    }
-
-    public List<Task> getTasksByStatus(Task.TaskStatus status) {
-        return tasks.values().stream()
-                .filter(task -> task.getStatus() == status)
-                .toList();
-    }
-
-    public Map<String, Object> getTaskStatistics() {
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("totalTasks", tasks.size());
-        stats.put("activeTasks", getActiveTasks().size());
-        stats.put("pausedTasks", getTasksByStatus(Task.TaskStatus.PAUSED).size());
-        stats.put("errorTasks", getTasksByStatus(Task.TaskStatus.ERROR).size());
-
-        return stats;
     }
 }

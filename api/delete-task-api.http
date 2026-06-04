@@ -1,0 +1,4 @@
+### Delete task
+@taskId = f990ac69-a1ad-4174-8ab3-b044628f5f92
+
+DELETE http://localhost:8080/api/tasks/{{taskId}}

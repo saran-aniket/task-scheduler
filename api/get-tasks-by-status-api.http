@@ -1,0 +1,5 @@
+### Get tasks by status
+@status = active
+
+GET http://localhost:8080/api/tasks/status/{{status}}
+Accept: application/json

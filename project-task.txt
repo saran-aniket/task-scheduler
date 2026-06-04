@@ -1,5 +1,6 @@
 1. SpringBoot @Scheduled annotation and problems in distributed architecture
 2. Task Definition Model and Persistence
+	Change Task name to TaskDefinition
 3. Rest API for Task CRUD
 4. Dynamic Scheduling using TaskDefinition
 5. Distributed locking (DB and Redis Approach)

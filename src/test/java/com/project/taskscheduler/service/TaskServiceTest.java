@@ -1,7 +1,7 @@
 package com.project.taskscheduler.service;
 
 import com.project.taskscheduler.exception.TaskNotFoundException;
-import com.project.taskscheduler.model.Task;
+import com.project.taskscheduler.model.TaskDefinition;
 import com.project.taskscheduler.repository.implementation.TaskRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,26 +28,26 @@ class TaskServiceTest {
 
     @Test
     void getAllTasksReturnsTasks() {
-        Task task = createTask();
+        TaskDefinition taskDefinition = createTask();
 
-        when(taskRepository.findAll()).thenReturn(List.of(task));
+        when(taskRepository.findAll()).thenReturn(List.of(taskDefinition));
 
-        List<Task> tasks = taskService.getAllTasks();
+        List<TaskDefinition> taskDefinitions = taskService.getAllTasks();
 
-        assertEquals(1, tasks.size());
-        assertEquals("Test Task", tasks.getFirst().getName());
+        assertEquals(1, taskDefinitions.size());
+        assertEquals("Test Task", taskDefinitions.getFirst().getName());
         verify(taskRepository).findAll();
     }
 
     @Test
     void getTaskByIdReturnsTaskWhenFound() {
         UUID id = UUID.randomUUID();
-        Task task = createTask();
-        setId(task, id);
+        TaskDefinition taskDefinition = createTask();
+        setId(taskDefinition, id);
 
-        when(taskRepository.findById(id)).thenReturn(Optional.of(task));
+        when(taskRepository.findById(id)).thenReturn(Optional.of(taskDefinition));
 
-        Task result = taskService.getTaskById(id);
+        TaskDefinition result = taskService.getTaskById(id);
 
         assertEquals(id, result.getId());
         assertEquals("Test Task", result.getName());
@@ -64,125 +64,125 @@ class TaskServiceTest {
 
     @Test
     void createTaskSavesTask() {
-        Task task = createTask();
+        TaskDefinition taskDefinition = createTask();
 
-        when(taskRepository.save(task)).thenReturn(task);
+        when(taskRepository.save(taskDefinition)).thenReturn(taskDefinition);
 
-        Task result = taskService.createTask(task);
+        TaskDefinition result = taskService.createTask(taskDefinition);
 
-        assertEquals(Task.TaskStatus.ACTIVE, result.getStatus());
+        assertEquals(TaskDefinition.TaskStatus.ACTIVE, result.getStatus());
         assertTrue(result.isActive());
-        verify(taskRepository).save(task);
+        verify(taskRepository).save(taskDefinition);
     }
 
     @Test
     void updateTaskUpdatesExistingTask() {
         UUID id = UUID.randomUUID();
 
-        Task existingTask = createTask();
-        setId(existingTask, id);
+        TaskDefinition existingTaskDefinition = createTask();
+        setId(existingTaskDefinition, id);
 
-        Task updatedTask = new Task(
+        TaskDefinition updatedTaskDefinition = new TaskDefinition(
                 "Updated Task",
                 "Updated Description",
-                Task.TaskType.FIXED_DELAY,
+                TaskDefinition.TaskType.FIXED_DELAY,
                 "2000"
         );
 
-        when(taskRepository.findById(id)).thenReturn(Optional.of(existingTask));
-        when(taskRepository.save(existingTask)).thenReturn(existingTask);
+        when(taskRepository.findById(id)).thenReturn(Optional.of(existingTaskDefinition));
+        when(taskRepository.save(existingTaskDefinition)).thenReturn(existingTaskDefinition);
 
-        Task result = taskService.updateTask(id.toString(), updatedTask);
+        TaskDefinition result = taskService.updateTask(id.toString(), updatedTaskDefinition);
 
         assertEquals("Updated Task", result.getName());
         assertEquals("Updated Description", result.getDescription());
-        assertEquals(Task.TaskType.FIXED_DELAY, result.getType());
+        assertEquals(TaskDefinition.TaskType.FIXED_DELAY, result.getType());
         assertEquals("2000", result.getSchedule());
-        verify(taskRepository).save(existingTask);
+        verify(taskRepository).save(existingTaskDefinition);
     }
 
     @Test
     void deleteTaskDeletesExistingTask() {
         UUID id = UUID.randomUUID();
 
-        Task task = createTask();
-        setId(task, id);
+        TaskDefinition taskDefinition = createTask();
+        setId(taskDefinition, id);
 
-        when(taskRepository.findById(id)).thenReturn(Optional.of(task));
+        when(taskRepository.findById(id)).thenReturn(Optional.of(taskDefinition));
 
         taskService.deleteTask(id.toString());
 
-        verify(taskRepository).delete(task);
+        verify(taskRepository).delete(taskDefinition);
     }
 
     @Test
     void pauseTaskUpdatesStatusToPaused() {
         UUID id = UUID.randomUUID();
 
-        Task task = createTask();
-        setId(task, id);
+        TaskDefinition taskDefinition = createTask();
+        setId(taskDefinition, id);
 
-        when(taskRepository.findById(id)).thenReturn(Optional.of(task));
-        when(taskRepository.save(task)).thenReturn(task);
+        when(taskRepository.findById(id)).thenReturn(Optional.of(taskDefinition));
+        when(taskRepository.save(taskDefinition)).thenReturn(taskDefinition);
 
-        Task result = taskService.pauseTask(id.toString());
+        TaskDefinition result = taskService.pauseTask(id.toString());
 
         assertFalse(result.isActive());
-        assertEquals(Task.TaskStatus.PAUSED, result.getStatus());
-        verify(taskRepository).save(task);
+        assertEquals(TaskDefinition.TaskStatus.PAUSED, result.getStatus());
+        verify(taskRepository).save(taskDefinition);
     }
 
     @Test
     void resumeTaskUpdatesStatusToActive() {
         UUID id = UUID.randomUUID();
 
-        Task task = createTask();
-        task.setActive(false);
-        task.setStatus(Task.TaskStatus.PAUSED);
-        setId(task, id);
+        TaskDefinition taskDefinition = createTask();
+        taskDefinition.setActive(false);
+        taskDefinition.setStatus(TaskDefinition.TaskStatus.PAUSED);
+        setId(taskDefinition, id);
 
-        when(taskRepository.findById(id)).thenReturn(Optional.of(task));
-        when(taskRepository.save(task)).thenReturn(task);
+        when(taskRepository.findById(id)).thenReturn(Optional.of(taskDefinition));
+        when(taskRepository.save(taskDefinition)).thenReturn(taskDefinition);
 
-        Task result = taskService.resumeTask(id.toString());
+        TaskDefinition result = taskService.resumeTask(id.toString());
 
         assertTrue(result.isActive());
-        assertEquals(Task.TaskStatus.ACTIVE, result.getStatus());
+        assertEquals(TaskDefinition.TaskStatus.ACTIVE, result.getStatus());
         assertNotNull(result.getNextRun());
-        verify(taskRepository).save(task);
+        verify(taskRepository).save(taskDefinition);
     }
 
     @Test
     void executeTaskUpdatesLastRunAndNextRun() {
         UUID id = UUID.randomUUID();
 
-        Task task = createTask();
-        setId(task, id);
+        TaskDefinition taskDefinition = createTask();
+        setId(taskDefinition, id);
 
-        when(taskRepository.findById(id)).thenReturn(Optional.of(task));
-        when(taskRepository.save(task)).thenReturn(task);
+        when(taskRepository.findById(id)).thenReturn(Optional.of(taskDefinition));
+        when(taskRepository.save(taskDefinition)).thenReturn(taskDefinition);
 
-        Task result = taskService.executeTask(id.toString());
+        TaskDefinition result = taskService.executeTask(id.toString());
 
         assertNotNull(result.getLastRun());
         assertNotNull(result.getNextRun());
-        verify(taskRepository).save(task);
+        verify(taskRepository).save(taskDefinition);
     }
 
-    private Task createTask() {
-        return new Task(
+    private TaskDefinition createTask() {
+        return new TaskDefinition(
                 "Test Task",
                 "Test Description",
-                Task.TaskType.FIXED_RATE,
+                TaskDefinition.TaskType.FIXED_RATE,
                 "1000"
         );
     }
 
-    private void setId(Task task, UUID id) {
+    private void setId(TaskDefinition taskDefinition, UUID id) {
         try {
-            Field field = task.getClass().getSuperclass().getDeclaredField("id");
+            Field field = taskDefinition.getClass().getSuperclass().getDeclaredField("id");
             field.setAccessible(true);
-            field.set(task, id);
+            field.set(taskDefinition, id);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }

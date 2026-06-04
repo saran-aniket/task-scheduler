@@ -1,0 +1,16 @@
+### Update task
+@taskId = f990ac69-a1ad-4174-8ab3-b044628f5f92
+@counter = 1
+
+PUT http://localhost:8080/api/tasks/{{taskId}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Updated Fixed Delay Task",
+  "description": "Runs 2000 milliseconds after previous execution completes",
+  "type": "FIXED_DELAY",
+  "schedule": "2000",
+  "active": true,
+  "status": "ACTIVE"
+}

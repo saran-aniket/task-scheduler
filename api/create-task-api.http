@@ -1,0 +1,13 @@
+### Create task
+POST http://localhost:8080/api/tasks
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Sample Fixed Rate Task",
+  "description": "Runs every 1000 milliseconds",
+  "type": "FIXED_RATE",
+  "schedule": "1000",
+  "active": true,
+  "status": "ACTIVE"
+}

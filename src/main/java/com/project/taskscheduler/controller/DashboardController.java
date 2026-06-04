@@ -1,6 +1,6 @@
 package com.project.taskscheduler.controller;
 
-import com.project.taskscheduler.model.Task;
+import com.project.taskscheduler.model.TaskDefinition;
 import com.project.taskscheduler.service.TaskSchedulerService;
 import com.project.taskscheduler.service.TaskService;
 import org.springframework.stereotype.Controller;
@@ -58,8 +58,8 @@ public class DashboardController {
         data.put("tasks", taskService.getAllTasks());
         data.put("activeTasks", taskService.getActiveTasks());
         data.put("taskStatistics", taskService.getTaskStatistics());
-        data.put("taskTypes", Task.TaskType.values());
-        data.put("taskStatuses", Task.TaskStatus.values());
+        data.put("taskTypes", TaskDefinition.TaskType.values());
+        data.put("taskStatuses", TaskDefinition.TaskStatus.values());
         return data;
     }
 }

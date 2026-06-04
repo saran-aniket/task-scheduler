@@ -1,10 +1,9 @@
 package com.project.taskscheduler.service;
 
 import com.project.taskscheduler.exception.TaskNotFoundException;
-import com.project.taskscheduler.model.Task;
+import com.project.taskscheduler.model.TaskDefinition;
 import com.project.taskscheduler.repository.implementation.TaskRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -22,105 +21,105 @@ public class TaskService {
         this.taskRepository = taskRepository;
     }
 
-    public List<Task> getAllTasks() {
+    public List<TaskDefinition> getAllTasks() {
         return taskRepository.findAll();
     }
 
-    public Task getTaskById(UUID id) {
+    public TaskDefinition getTaskById(UUID id) {
         return taskRepository.findById(id)
                 .orElseThrow(() -> new TaskNotFoundException("Task not found with id: " + id));
     }
 
-    public Task createTask(Task task) {
-        if (task.getStatus() == null) {
-            task.setStatus(Task.TaskStatus.ACTIVE);
+    public TaskDefinition createTask(TaskDefinition taskDefinition) {
+        if (taskDefinition.getStatus() == null) {
+            taskDefinition.setStatus(TaskDefinition.TaskStatus.ACTIVE);
         }
 
-        task.setActive(task.getStatus() == Task.TaskStatus.ACTIVE);
+        taskDefinition.setActive(taskDefinition.getStatus() == TaskDefinition.TaskStatus.ACTIVE);
 
-        if (task.getNextRun() == null) {
-            calculateNextRun(task);
+        if (taskDefinition.getNextRun() == null) {
+            calculateNextRun(taskDefinition);
         }
 
-        return taskRepository.save(task);
+        return taskRepository.save(taskDefinition);
     }
 
-    public Task updateTask(String id, Task updatedTask) {
-        Task existingTask = getTaskById(parseUuid(id));
+    public TaskDefinition updateTask(String id, TaskDefinition updatedTaskDefinition) {
+        TaskDefinition existingTaskDefinition = getTaskById(parseUuid(id));
 
-        existingTask.setName(updatedTask.getName());
-        existingTask.setDescription(updatedTask.getDescription());
-        existingTask.setType(updatedTask.getType());
-        existingTask.setSchedule(updatedTask.getSchedule());
+        existingTaskDefinition.setName(updatedTaskDefinition.getName());
+        existingTaskDefinition.setDescription(updatedTaskDefinition.getDescription());
+        existingTaskDefinition.setType(updatedTaskDefinition.getType());
+        existingTaskDefinition.setSchedule(updatedTaskDefinition.getSchedule());
 
-        if (updatedTask.getStatus() != null) {
-            existingTask.setStatus(updatedTask.getStatus());
-            existingTask.setActive(updatedTask.getStatus() == Task.TaskStatus.ACTIVE);
+        if (updatedTaskDefinition.getStatus() != null) {
+            existingTaskDefinition.setStatus(updatedTaskDefinition.getStatus());
+            existingTaskDefinition.setActive(updatedTaskDefinition.getStatus() == TaskDefinition.TaskStatus.ACTIVE);
         }
 
-        calculateNextRun(existingTask);
+        calculateNextRun(existingTaskDefinition);
 
-        return taskRepository.save(existingTask);
+        return taskRepository.save(existingTaskDefinition);
     }
 
     public void deleteTask(String id) {
-        Task task = getTaskById(parseUuid(id));
-        taskRepository.delete(task);
+        TaskDefinition taskDefinition = getTaskById(parseUuid(id));
+        taskRepository.delete(taskDefinition);
     }
 
-    public Task pauseTask(String id) {
-        Task task = getTaskById(parseUuid(id));
+    public TaskDefinition pauseTask(String id) {
+        TaskDefinition taskDefinition = getTaskById(parseUuid(id));
 
-        task.setActive(false);
-        task.setStatus(Task.TaskStatus.PAUSED);
+        taskDefinition.setActive(false);
+        taskDefinition.setStatus(TaskDefinition.TaskStatus.PAUSED);
 
-        return taskRepository.save(task);
+        return taskRepository.save(taskDefinition);
     }
 
-    public Task resumeTask(String id) {
-        Task task = getTaskById(parseUuid(id));
+    public TaskDefinition resumeTask(String id) {
+        TaskDefinition taskDefinition = getTaskById(parseUuid(id));
 
-        task.setActive(true);
-        task.setStatus(Task.TaskStatus.ACTIVE);
-        calculateNextRun(task);
+        taskDefinition.setActive(true);
+        taskDefinition.setStatus(TaskDefinition.TaskStatus.ACTIVE);
+        calculateNextRun(taskDefinition);
 
-        return taskRepository.save(task);
+        return taskRepository.save(taskDefinition);
     }
 
-    public Task executeTask(String id) {
-        Task task = getTaskById(parseUuid(id));
+    public TaskDefinition executeTask(String id) {
+        TaskDefinition taskDefinition = getTaskById(parseUuid(id));
 
-        task.setLastRun(LocalDateTime.now());
-        calculateNextRun(task);
+        taskDefinition.setLastRun(LocalDateTime.now());
+        calculateNextRun(taskDefinition);
 
-        return taskRepository.save(task);
+        return taskRepository.save(taskDefinition);
     }
 
-    public List<Task> getActiveTasks() {
+    public List<TaskDefinition> getActiveTasks() {
         return taskRepository.findByActiveTrue();
     }
 
-    public List<Task> getTasksByStatus(Task.TaskStatus status) {
+    public List<TaskDefinition> getTasksByStatus(TaskDefinition.TaskStatus status) {
         return taskRepository.findByStatus(status);
     }
 
     public Map<String, Object> getTaskStatistics() {
-        List<Task> tasks = taskRepository.findAll();
+        List<TaskDefinition> taskDefinitions = taskRepository.findAll();
 
-        long activeTasks = tasks.stream()
-                .filter(Task::isActive)
+        long activeTasks = taskDefinitions.stream()
+                .filter(TaskDefinition::isActive)
                 .count();
 
-        long pausedTasks = tasks.stream()
-                .filter(task -> task.getStatus() == Task.TaskStatus.PAUSED)
+        long pausedTasks = taskDefinitions.stream()
+                .filter(task -> task.getStatus() == TaskDefinition.TaskStatus.PAUSED)
                 .count();
 
-        long errorTasks = tasks.stream()
-                .filter(task -> task.getStatus() == Task.TaskStatus.ERROR)
+        long errorTasks = taskDefinitions.stream()
+                .filter(task -> task.getStatus() == TaskDefinition.TaskStatus.ERROR)
                 .count();
 
         Map<String, Object> stats = new HashMap<>();
-        stats.put("totalTasks", tasks.size());
+        stats.put("totalTasks", taskDefinitions.size());
         stats.put("activeTasks", activeTasks);
         stats.put("pausedTasks", pausedTasks);
         stats.put("errorTasks", errorTasks);
@@ -136,23 +135,23 @@ public class TaskService {
         }
     }
 
-    private void calculateNextRun(Task task) {
+    private void calculateNextRun(TaskDefinition taskDefinition) {
         LocalDateTime now = LocalDateTime.now();
 
-        if (task.getType() == null || task.getSchedule() == null || task.getSchedule().isBlank()) {
+        if (taskDefinition.getType() == null || taskDefinition.getSchedule() == null || taskDefinition.getSchedule().isBlank()) {
             return;
         }
 
-        switch (task.getType()) {
+        switch (taskDefinition.getType()) {
             case FIXED_RATE -> {
-                long interval = Long.parseLong(task.getSchedule());
-                task.setNextRun(now.plus(Duration.ofMillis(interval)));
+                long interval = Long.parseLong(taskDefinition.getSchedule());
+                taskDefinition.setNextRun(now.plus(Duration.ofMillis(interval)));
             }
             case FIXED_DELAY -> {
-                long delay = Long.parseLong(task.getSchedule());
-                task.setNextRun(now.plus(Duration.ofMillis(delay)));
+                long delay = Long.parseLong(taskDefinition.getSchedule());
+                taskDefinition.setNextRun(now.plus(Duration.ofMillis(delay)));
             }
-            case CRON -> task.setNextRun(now.plusMinutes(1));
+            case CRON -> taskDefinition.setNextRun(now.plusMinutes(1));
         }
     }
 }

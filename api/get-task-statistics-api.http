@@ -1,0 +1,3 @@
+### Get task statistics
+GET http://localhost:8080/api/tasks/statistics
+Accept: application/json

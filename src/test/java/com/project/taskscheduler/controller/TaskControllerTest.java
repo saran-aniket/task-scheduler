@@ -3,7 +3,7 @@ package com.project.taskscheduler.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.taskscheduler.exception.GlobalExceptionHandler;
 import com.project.taskscheduler.exception.TaskNotFoundException;
-import com.project.taskscheduler.model.Task;
+import com.project.taskscheduler.model.TaskDefinition;
 import com.project.taskscheduler.service.TaskService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -36,11 +36,11 @@ class TaskControllerTest {
 
     @Test
     void getAllTasksReturnsTasks() throws Exception {
-        Task task = createTask();
+        TaskDefinition taskDefinition = createTask();
         UUID id = UUID.randomUUID();
-        setId(task, id);
+        setId(taskDefinition, id);
 
-        when(taskService.getAllTasks()).thenReturn(List.of(task));
+        when(taskService.getAllTasks()).thenReturn(List.of(taskDefinition));
 
         mockMvc.perform(get("/api/tasks"))
                 .andExpect(status().isOk())
@@ -52,10 +52,10 @@ class TaskControllerTest {
     void getTaskByIdReturnsTask() throws Exception {
         UUID id = UUID.randomUUID();
 
-        Task task = createTask();
-        setId(task, id);
+        TaskDefinition taskDefinition = createTask();
+        setId(taskDefinition, id);
 
-        when(taskService.getTaskById(id)).thenReturn(task);
+        when(taskService.getTaskById(id)).thenReturn(taskDefinition);
 
         mockMvc.perform(get("/api/tasks/{id}", id))
                 .andExpect(status().isOk())
@@ -76,27 +76,27 @@ class TaskControllerTest {
 
     @Test
     void createTaskReturnsCreatedTask() throws Exception {
-        Task task = createTask();
+        TaskDefinition taskDefinition = createTask();
 
-        when(taskService.createTask(any(Task.class))).thenReturn(task);
+        when(taskService.createTask(any(TaskDefinition.class))).thenReturn(taskDefinition);
 
         mockMvc.perform(post("/api/tasks")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(task)))
+                        .content(objectMapper.writeValueAsString(taskDefinition)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name").value("Test Task"));
 
-        verify(taskService).createTask(any(Task.class));
+        verify(taskService).createTask(any(TaskDefinition.class));
     }
 
     @Test
     void createTaskReturnsBadRequestForInvalidBody() throws Exception {
-        Task task = new Task();
-        task.setDescription("Missing required fields");
+        TaskDefinition taskDefinition = new TaskDefinition();
+        taskDefinition.setDescription("Missing required fields");
 
         mockMvc.perform(post("/api/tasks")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(task)))
+                        .content(objectMapper.writeValueAsString(taskDefinition)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Validation failed"));
     }
@@ -105,23 +105,23 @@ class TaskControllerTest {
     void updateTaskReturnsUpdatedTask() throws Exception {
         UUID id = UUID.randomUUID();
 
-        Task updatedTask = new Task(
+        TaskDefinition updatedTaskDefinition = new TaskDefinition(
                 "Updated Task",
                 "Updated Description",
-                Task.TaskType.FIXED_DELAY,
+                TaskDefinition.TaskType.FIXED_DELAY,
                 "2000"
         );
 
-        when(taskService.updateTask(eq(id.toString()), any(Task.class))).thenReturn(updatedTask);
+        when(taskService.updateTask(eq(id.toString()), any(TaskDefinition.class))).thenReturn(updatedTaskDefinition);
 
         mockMvc.perform(put("/api/tasks/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updatedTask)))
+                        .content(objectMapper.writeValueAsString(updatedTaskDefinition)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Updated Task"))
                 .andExpect(jsonPath("$.description").value("Updated Description"));
 
-        verify(taskService).updateTask(eq(id.toString()), any(Task.class));
+        verify(taskService).updateTask(eq(id.toString()), any(TaskDefinition.class));
     }
 
     @Test
@@ -140,11 +140,11 @@ class TaskControllerTest {
     void pauseTaskReturnsPausedTask() throws Exception {
         UUID id = UUID.randomUUID();
 
-        Task task = createTask();
-        task.setActive(false);
-        task.setStatus(Task.TaskStatus.PAUSED);
+        TaskDefinition taskDefinition = createTask();
+        taskDefinition.setActive(false);
+        taskDefinition.setStatus(TaskDefinition.TaskStatus.PAUSED);
 
-        when(taskService.pauseTask(id.toString())).thenReturn(task);
+        when(taskService.pauseTask(id.toString())).thenReturn(taskDefinition);
 
         mockMvc.perform(post("/api/tasks/{id}/pause", id))
                 .andExpect(status().isOk())
@@ -156,9 +156,9 @@ class TaskControllerTest {
     void resumeTaskReturnsActiveTask() throws Exception {
         UUID id = UUID.randomUUID();
 
-        Task task = createTask();
+        TaskDefinition taskDefinition = createTask();
 
-        when(taskService.resumeTask(id.toString())).thenReturn(task);
+        when(taskService.resumeTask(id.toString())).thenReturn(taskDefinition);
 
         mockMvc.perform(post("/api/tasks/{id}/resume", id))
                 .andExpect(status().isOk())
@@ -170,9 +170,9 @@ class TaskControllerTest {
     void executeTaskReturnsExecutedTask() throws Exception {
         UUID id = UUID.randomUUID();
 
-        Task task = createTask();
+        TaskDefinition taskDefinition = createTask();
 
-        when(taskService.executeTask(id.toString())).thenReturn(task);
+        when(taskService.executeTask(id.toString())).thenReturn(taskDefinition);
 
         mockMvc.perform(post("/api/tasks/{id}/execute", id))
                 .andExpect(status().isOk())
@@ -181,9 +181,9 @@ class TaskControllerTest {
 
     @Test
     void getActiveTasksReturnsActiveTasks() throws Exception {
-        Task task = createTask();
+        TaskDefinition taskDefinition = createTask();
 
-        when(taskService.getActiveTasks()).thenReturn(List.of(task));
+        when(taskService.getActiveTasks()).thenReturn(List.of(taskDefinition));
 
         mockMvc.perform(get("/api/tasks/active"))
                 .andExpect(status().isOk())
@@ -192,29 +192,29 @@ class TaskControllerTest {
 
     @Test
     void getTasksByStatusReturnsTasks() throws Exception {
-        Task task = createTask();
+        TaskDefinition taskDefinition = createTask();
 
-        when(taskService.getTasksByStatus(Task.TaskStatus.ACTIVE)).thenReturn(List.of(task));
+        when(taskService.getTasksByStatus(TaskDefinition.TaskStatus.ACTIVE)).thenReturn(List.of(taskDefinition));
 
         mockMvc.perform(get("/api/tasks/status/active"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)));
     }
 
-    private Task createTask() {
-        return new Task(
+    private TaskDefinition createTask() {
+        return new TaskDefinition(
                 "Test Task",
                 "Test Description",
-                Task.TaskType.FIXED_RATE,
+                TaskDefinition.TaskType.FIXED_RATE,
                 "1000"
         );
     }
 
-    private void setId(Task task, UUID id) {
+    private void setId(TaskDefinition taskDefinition, UUID id) {
         try {
-            Field field = task.getClass().getSuperclass().getDeclaredField("id");
+            Field field = taskDefinition.getClass().getSuperclass().getDeclaredField("id");
             field.setAccessible(true);
-            field.set(task, id);
+            field.set(taskDefinition, id);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }

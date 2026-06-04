@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "task_definitions")
-public class Task extends BaseModel {
+public class TaskDefinition extends BaseModel {
 
     @NotBlank(message = "Task name is required")
     @Column(nullable = false)
@@ -40,12 +40,12 @@ public class Task extends BaseModel {
     @Column(nullable = false)
     private TaskStatus status;
 
-    public Task() {
+    public TaskDefinition() {
         this.status = TaskStatus.ACTIVE;
         this.active = true;
     }
 
-    public Task(String name, String description, TaskType type, String schedule) {
+    public TaskDefinition(String name, String description, TaskType type, String schedule) {
         this();
         this.name = name;
         this.description = description;

@@ -1,6 +1,6 @@
 package com.project.taskscheduler.controller;
 
-import com.project.taskscheduler.model.Task;
+import com.project.taskscheduler.model.TaskDefinition;
 import com.project.taskscheduler.service.TaskService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -21,29 +21,29 @@ public class TaskController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Task>> getAllTasks() {
+    public ResponseEntity<List<TaskDefinition>> getAllTasks() {
         return ResponseEntity.ok(taskService.getAllTasks());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Task> getTaskById(@PathVariable String id) {
-        Task task = taskService.getTaskById(UUID.fromString(id));
-        return ResponseEntity.ok(task);
+    public ResponseEntity<TaskDefinition> getTaskById(@PathVariable String id) {
+        TaskDefinition taskDefinition = taskService.getTaskById(UUID.fromString(id));
+        return ResponseEntity.ok(taskDefinition);
     }
 
     @PostMapping
-    public ResponseEntity<Task> createTask(@Valid @RequestBody Task task) {
-        Task createdTask = taskService.createTask(task);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
+    public ResponseEntity<TaskDefinition> createTask(@Valid @RequestBody TaskDefinition taskDefinition) {
+        TaskDefinition createdTaskDefinition = taskService.createTask(taskDefinition);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdTaskDefinition);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Task> updateTask(
+    public ResponseEntity<TaskDefinition> updateTask(
             @PathVariable String id,
-            @Valid @RequestBody Task task
+            @Valid @RequestBody TaskDefinition taskDefinition
     ) {
-        Task updatedTask = taskService.updateTask(id, task);
-        return ResponseEntity.ok(updatedTask);
+        TaskDefinition updatedTaskDefinition = taskService.updateTask(id, taskDefinition);
+        return ResponseEntity.ok(updatedTaskDefinition);
     }
 
     @DeleteMapping("/{id}")
@@ -53,28 +53,28 @@ public class TaskController {
     }
 
     @PostMapping("/{id}/pause")
-    public ResponseEntity<Task> pauseTask(@PathVariable String id) {
+    public ResponseEntity<TaskDefinition> pauseTask(@PathVariable String id) {
         return ResponseEntity.ok(taskService.pauseTask(id));
     }
 
     @PostMapping("/{id}/resume")
-    public ResponseEntity<Task> resumeTask(@PathVariable String id) {
+    public ResponseEntity<TaskDefinition> resumeTask(@PathVariable String id) {
         return ResponseEntity.ok(taskService.resumeTask(id));
     }
 
     @PostMapping("/{id}/execute")
-    public ResponseEntity<Task> executeTask(@PathVariable String id) {
+    public ResponseEntity<TaskDefinition> executeTask(@PathVariable String id) {
         return ResponseEntity.ok(taskService.executeTask(id));
     }
 
     @GetMapping("/active")
-    public ResponseEntity<List<Task>> getActiveTasks() {
+    public ResponseEntity<List<TaskDefinition>> getActiveTasks() {
         return ResponseEntity.ok(taskService.getActiveTasks());
     }
 
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<Task>> getTasksByStatus(@PathVariable String status) {
-        Task.TaskStatus taskStatus = Task.TaskStatus.valueOf(status.toUpperCase());
+    public ResponseEntity<List<TaskDefinition>> getTasksByStatus(@PathVariable String status) {
+        TaskDefinition.TaskStatus taskStatus = TaskDefinition.TaskStatus.valueOf(status.toUpperCase());
         return ResponseEntity.ok(taskService.getTasksByStatus(taskStatus));
     }
 
@@ -84,12 +84,12 @@ public class TaskController {
     }
 
     @GetMapping("/types")
-    public ResponseEntity<Task.TaskType[]> getTaskTypes() {
-        return ResponseEntity.ok(Task.TaskType.values());
+    public ResponseEntity<TaskDefinition.TaskType[]> getTaskTypes() {
+        return ResponseEntity.ok(TaskDefinition.TaskType.values());
     }
 
     @GetMapping("/statuses")
-    public ResponseEntity<Task.TaskStatus[]> getTaskStatuses() {
-        return ResponseEntity.ok(Task.TaskStatus.values());
+    public ResponseEntity<TaskDefinition.TaskStatus[]> getTaskStatuses() {
+        return ResponseEntity.ok(TaskDefinition.TaskStatus.values());
     }
 }

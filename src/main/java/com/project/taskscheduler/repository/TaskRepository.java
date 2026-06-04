@@ -1,6 +1,7 @@
-package com.project.taskscheduler.repository.implementation;
+package com.project.taskscheduler.repository;
 
 import com.project.taskscheduler.model.TaskDefinition;
+import com.project.taskscheduler.model.TaskStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,5 +13,5 @@ public interface TaskRepository extends JpaRepository<TaskDefinition, UUID> {
 
     List<TaskDefinition> findByActiveTrue();
 
-    List<TaskDefinition> findByStatus(TaskDefinition.TaskStatus status);
+    List<TaskDefinition> findByStatus(TaskStatus status);
 }

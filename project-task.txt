@@ -20,7 +20,7 @@
 19. Centralized Logging & Task Management API
 20. UI Integration, Security & Testing
 21. Chaos Engineering
-22. Kubernetes, Docker & Helm Deployment (Days 51–53)
-23. Time Zones, Cron Validation & Multi-Tenancy (Days 54–56)
-24. Serverless Integration & Performance Tuning (Days 57–58)
-25. Future Trends & Course Wrap-up (Days 59–60)
+22. Kubernetes, Docker & Helm Deployment
+23. Time Zones, Cron Validation & Multi-Tenancy
+24. Serverless Integration & Performance Tuning
+25. Future Trends & Course Wrap-up

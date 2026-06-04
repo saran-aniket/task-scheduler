@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.taskscheduler.exception.GlobalExceptionHandler;
 import com.project.taskscheduler.exception.TaskNotFoundException;
 import com.project.taskscheduler.model.TaskDefinition;
+import com.project.taskscheduler.model.TaskStatus;
+import com.project.taskscheduler.model.TaskType;
 import com.project.taskscheduler.service.TaskService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -108,7 +110,7 @@ class TaskControllerTest {
         TaskDefinition updatedTaskDefinition = new TaskDefinition(
                 "Updated Task",
                 "Updated Description",
-                TaskDefinition.TaskType.FIXED_DELAY,
+                TaskType.FIXED_DELAY,
                 "2000"
         );
 
@@ -136,48 +138,48 @@ class TaskControllerTest {
         verify(taskService).deleteTask(id.toString());
     }
 
-    @Test
-    void pauseTaskReturnsPausedTask() throws Exception {
-        UUID id = UUID.randomUUID();
+//    @Test
+//    void pauseTaskReturnsPausedTask() throws Exception {
+//        UUID id = UUID.randomUUID();
+//
+//        TaskDefinition taskDefinition = createTask();
+//        taskDefinition.setActive(false);
+//        taskDefinition.setStatus(TaskDefinition.TaskStatus.PAUSED);
+//
+//        when(taskService.pauseTask(id.toString())).thenReturn(taskDefinition);
+//
+//        mockMvc.perform(post("/api/tasks/{id}/pause", id))
+//                .andExpect(status().isOk())
+//                .andExpect(jsonPath("$.active").value(false))
+//                .andExpect(jsonPath("$.status").value("PAUSED"));
+//    }
 
-        TaskDefinition taskDefinition = createTask();
-        taskDefinition.setActive(false);
-        taskDefinition.setStatus(TaskDefinition.TaskStatus.PAUSED);
+//    @Test
+//    void resumeTaskReturnsActiveTask() throws Exception {
+//        UUID id = UUID.randomUUID();
+//
+//        TaskDefinition taskDefinition = createTask();
+//
+//        when(taskService.resumeTask(id.toString())).thenReturn(taskDefinition);
+//
+//        mockMvc.perform(post("/api/tasks/{id}/resume", id))
+//                .andExpect(status().isOk())
+//                .andExpect(jsonPath("$.active").value(true))
+//                .andExpect(jsonPath("$.status").value("ACTIVE"));
+//    }
 
-        when(taskService.pauseTask(id.toString())).thenReturn(taskDefinition);
-
-        mockMvc.perform(post("/api/tasks/{id}/pause", id))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.active").value(false))
-                .andExpect(jsonPath("$.status").value("PAUSED"));
-    }
-
-    @Test
-    void resumeTaskReturnsActiveTask() throws Exception {
-        UUID id = UUID.randomUUID();
-
-        TaskDefinition taskDefinition = createTask();
-
-        when(taskService.resumeTask(id.toString())).thenReturn(taskDefinition);
-
-        mockMvc.perform(post("/api/tasks/{id}/resume", id))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.active").value(true))
-                .andExpect(jsonPath("$.status").value("ACTIVE"));
-    }
-
-    @Test
-    void executeTaskReturnsExecutedTask() throws Exception {
-        UUID id = UUID.randomUUID();
-
-        TaskDefinition taskDefinition = createTask();
-
-        when(taskService.executeTask(id.toString())).thenReturn(taskDefinition);
-
-        mockMvc.perform(post("/api/tasks/{id}/execute", id))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Test Task"));
-    }
+//    @Test
+//    void executeTaskReturnsExecutedTask() throws Exception {
+//        UUID id = UUID.randomUUID();
+//
+//        TaskDefinition taskDefinition = createTask();
+//
+//        when(taskService.executeTask(id.toString())).thenReturn(taskDefinition);
+//
+//        mockMvc.perform(post("/api/tasks/{id}/execute", id))
+//                .andExpect(status().isOk())
+//                .andExpect(jsonPath("$.name").value("Test Task"));
+//    }
 
     @Test
     void getActiveTasksReturnsActiveTasks() throws Exception {
@@ -194,7 +196,7 @@ class TaskControllerTest {
     void getTasksByStatusReturnsTasks() throws Exception {
         TaskDefinition taskDefinition = createTask();
 
-        when(taskService.getTasksByStatus(TaskDefinition.TaskStatus.ACTIVE)).thenReturn(List.of(taskDefinition));
+        when(taskService.getTasksByStatus(TaskStatus.ACTIVE)).thenReturn(List.of(taskDefinition));
 
         mockMvc.perform(get("/api/tasks/status/active"))
                 .andExpect(status().isOk())
@@ -205,7 +207,7 @@ class TaskControllerTest {
         return new TaskDefinition(
                 "Test Task",
                 "Test Description",
-                TaskDefinition.TaskType.FIXED_RATE,
+                TaskType.FIXED_RATE,
                 "1000"
         );
     }

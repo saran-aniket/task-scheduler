@@ -1,154 +1,119 @@
 package com.project.taskscheduler.service;
 
-import com.project.taskscheduler.model.TaskExecution;
+import com.project.taskscheduler.exception.TaskNotFoundException;
+import com.project.taskscheduler.model.TaskDefinition;
+import com.project.taskscheduler.model.TaskStatus;
+import com.project.taskscheduler.repository.TaskRepository;
+import com.project.taskscheduler.utility.TaskUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ScheduledFuture;
+
+import static com.project.taskscheduler.utility.TaskUtility.parseUuid;
 
 @Service
 public class TaskSchedulerService {
 
     private static final Logger logger = LoggerFactory.getLogger(TaskSchedulerService.class);
 
-    private final ConcurrentLinkedQueue<TaskExecution> executionHistory = new ConcurrentLinkedQueue<>();
-    private final AtomicInteger healthCheckCount = new AtomicInteger(0);
-    private final AtomicInteger cleanupCount = new AtomicInteger(0);
-    private final AtomicInteger reportCount = new AtomicInteger(0);
+    private final TaskRepository taskRepository;
+    private final TaskScheduler taskScheduler;
+    private final Map<UUID, ScheduledFuture<?>> executions = new HashMap<>();
 
-    // Fixed Rate: System Health Check (every 5 seconds)
-    @Scheduled(fixedRate = 5000)
-    public void systemHealthCheck() {
-        long startTime = System.currentTimeMillis();
-        LocalDateTime executionTime = LocalDateTime.now();
+    public TaskSchedulerService(TaskRepository taskRepository, TaskScheduler taskScheduler, TaskService taskService) {
+        this.taskRepository = taskRepository;
+        this.taskScheduler = taskScheduler;
+    }
 
-        try {
-            // Simulate health check operations
-            Thread.sleep(1000 + (long)(Math.random() * 2000)); // 1-3 seconds
+    public TaskDefinition getTaskById(UUID id) {
+        return taskRepository.findById(id)
+                .orElseThrow(() -> new TaskNotFoundException("Task not found with id: " + id));
+    }
 
-            int count = healthCheckCount.incrementAndGet();
-            long duration = System.currentTimeMillis() - startTime;
+    public TaskDefinition pauseTask(String id) {
+        TaskDefinition taskDefinition = getTaskById(parseUuid(id));
 
-            TaskExecution execution = new TaskExecution(
-                    "System Health Check",
-                    "FIXED_RATE",
-                    executionTime,
-                    "SUCCESS",
-                    duration
-            );
+        taskDefinition.setActive(false);
+        taskDefinition.setStatus(TaskStatus.PAUSED);
 
-            addExecution(execution);
-            logger.info("✅ Health Check #{} completed in {}ms by Thread {} - Status: HEALTHY", count, duration, Thread.currentThread().getName());
+        return taskRepository.save(taskDefinition);
+    }
 
-        } catch (Exception e) {
-            long duration = System.currentTimeMillis() - startTime;
-            TaskExecution execution = new TaskExecution(
-                    "System Health Check",
-                    "FIXED_RATE",
-                    executionTime,
-                    "ERROR",
-                    duration
-            );
-            addExecution(execution);
-            logger.error("❌ Health check failed", e);
+    public TaskDefinition resumeTask(String id) {
+        TaskDefinition taskDefinition = getTaskById(parseUuid(id));
+
+        taskDefinition.setActive(true);
+        taskDefinition.setStatus(TaskStatus.ACTIVE);
+
+        return taskRepository.save(taskDefinition);
+    }
+
+    public TaskDefinition executeTask(String id) {
+        TaskDefinition taskDefinition = getTaskById(parseUuid(id));
+
+        taskDefinition.setNextRun(LocalDateTime.now());
+
+        return taskRepository.save(taskDefinition);
+    }
+
+    public TaskDefinition cancelTask(String id) {
+        TaskDefinition taskDefinition = getTaskById(parseUuid(id));
+
+        taskDefinition.setActive(false);
+        taskDefinition.setStatus(TaskStatus.CANCELLED);
+        taskDefinition.setNextRun(null);
+
+        return taskRepository.save(taskDefinition);
+    }
+
+
+    public void scheduleTask(String taskDefinitionId) {
+        TaskDefinition taskDefinition = getTaskById(parseUuid(taskDefinitionId));
+
+        if (!taskDefinition.isActive()) {
+            logger.info("TaskDefinition {} is not active. Skipping schedule.", taskDefinition.getId());
+            return;
         }
-    }
 
-    // Fixed Delay: Cleanup Tasks (15 seconds after completion)
-    @Scheduled(fixedDelay = 15000)
-    public void performCleanup() {
-        long startTime = System.currentTimeMillis();
-        LocalDateTime executionTime = LocalDateTime.now();
-
-        try {
-            // Simulate cleanup operations with variable duration
-            Thread.sleep(3000 + (long)(Math.random() * 5000)); // 3-8 seconds
-
-            int count = cleanupCount.incrementAndGet();
-            long duration = System.currentTimeMillis() - startTime;
-
-            TaskExecution execution = new TaskExecution(
-                    "System Cleanup",
-                    "FIXED_DELAY",
-                    executionTime,
-                    "SUCCESS",
-                    duration
-            );
-
-            addExecution(execution);
-            logger.info("🧹 Cleanup Task #{} completed in {}ms by Thread {} - Temporary files cleaned", count, duration, Thread.currentThread().getName());
-
-        } catch (Exception e) {
-            long duration = System.currentTimeMillis() - startTime;
-            TaskExecution execution = new TaskExecution(
-                    "System Cleanup",
-                    "FIXED_DELAY",
-                    executionTime,
-                    "ERROR",
-                    duration
-            );
-            addExecution(execution);
-            logger.error("❌ Cleanup task failed", e);
+        if (taskDefinition.getNextRun() == null) {
+            taskDefinition.setNextRun(LocalDateTime.now());
+            taskDefinition = taskRepository.save(taskDefinition);
         }
+
+//        Instant executionTime = taskDefinition.getNextRun()
+//                .atZone(ZoneId.systemDefault())
+//                .toInstant();
+
+
+        TaskDefinition finalTaskDefinition = taskDefinition;
+        ScheduledFuture<?> scheduledFuture = taskScheduler.schedule(() -> {
+
+            if (!finalTaskDefinition.isActive()) {
+                logger.info("TaskDefinition {} is not active. Skipping execution.", finalTaskDefinition.getId());
+                return;
+            }
+
+            logger.info("Execution has started");
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            finalTaskDefinition.setLastRun(LocalDateTime.now());
+            finalTaskDefinition.setNextRun(TaskUtility.getNextRunFromCron(finalTaskDefinition.getSchedule()));
+            taskRepository.save(finalTaskDefinition);
+        }, new CronTrigger(taskDefinition.getSchedule()));
+
+        logger.info("TaskDefinition {} scheduled for execution at {}", taskDefinition.getId(), taskDefinition.getNextRun());
+        executions.put(taskDefinition.getId(), scheduledFuture);
     }
 
-    // Cron: Daily Report Generation (every minute for demo - normally daily)
-    @Scheduled(cron = "0 * * * * ?") // Every minute for demo purposes
-    public void generateDailyReport() {
-        long startTime = System.currentTimeMillis();
-        LocalDateTime executionTime = LocalDateTime.now();
-
-        try {
-            // Simulate report generation
-            Thread.sleep(2000 + (long)(Math.random() * 3000)); // 2-5 seconds
-
-            int count = reportCount.incrementAndGet();
-            long duration = System.currentTimeMillis() - startTime;
-
-            TaskExecution execution = new TaskExecution(
-                    "Daily Report Generation",
-                    "CRON",
-                    executionTime,
-                    "SUCCESS",
-                    duration
-            );
-
-            addExecution(execution);
-            logger.info("📊 Daily Report #{} generated in {}ms by Thread {} - Analytics updated", count, duration, Thread.currentThread().getName());
-
-        } catch (Exception e) {
-            long duration = System.currentTimeMillis() - startTime;
-            TaskExecution execution = new TaskExecution(
-                    "Daily Report Generation",
-                    "CRON",
-                    executionTime,
-                    "ERROR",
-                    duration
-            );
-            addExecution(execution);
-            logger.error("❌ Report generation failed", e);
-        }
-    }
-
-    private void addExecution(TaskExecution execution) {
-        executionHistory.offer(execution);
-        // Keep only last 50 executions
-        while (executionHistory.size() > 50) {
-            executionHistory.poll();
-        }
-    }
-
-    public List<TaskExecution> getExecutionHistory() {
-        return new ArrayList<>(executionHistory);
-    }
-
-    public int getHealthCheckCount() { return healthCheckCount.get(); }
-    public int getCleanupCount() { return cleanupCount.get(); }
-    public int getReportCount() { return reportCount.get(); }
 }

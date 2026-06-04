@@ -1,0 +1,5 @@
+### Cancel scheduled task
+@taskId = f990ac69-a1ad-4174-8ab3-b044628f5f92
+
+POST http://localhost:8080/api/task-schedules/{{taskId}}/cancel
+Accept: application/json

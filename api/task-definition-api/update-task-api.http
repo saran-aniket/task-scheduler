@@ -12,5 +12,6 @@ Accept: application/json
   "type": "FIXED_DELAY",
   "schedule": "2000",
   "active": true,
-  "status": "ACTIVE"
+  "status": "ACTIVE",
+  "schedule": "*/10 * * * * *"
 }

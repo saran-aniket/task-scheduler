@@ -41,8 +41,7 @@ public class TaskDefinition extends BaseModel {
     private TaskStatus status;
 
     public TaskDefinition() {
-        this.status = TaskStatus.ACTIVE;
-        this.active = true;
+        this.status = TaskStatus.CREATED;
     }
 
     public TaskDefinition(String name, String description, TaskType type, String schedule) {
@@ -127,37 +126,5 @@ public class TaskDefinition extends BaseModel {
                 ", active=" + active +
                 ", status=" + status +
                 '}';
-    }
-
-    public enum TaskType {
-        FIXED_RATE("Fixed Rate"),
-        FIXED_DELAY("Fixed Delay"),
-        CRON("Cron Expression");
-
-        private final String displayName;
-
-        TaskType(String displayName) {
-            this.displayName = displayName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
-    }
-
-    public enum TaskStatus {
-        ACTIVE("Active"),
-        PAUSED("Paused"),
-        ERROR("Error");
-
-        private final String displayName;
-
-        TaskStatus(String displayName) {
-            this.displayName = displayName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
     }
 }

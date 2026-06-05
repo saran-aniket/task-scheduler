@@ -3,7 +3,7 @@ package com.project.taskscheduler.service;
 import com.project.taskscheduler.exception.TaskNotFoundException;
 import com.project.taskscheduler.model.TaskDefinition;
 import com.project.taskscheduler.model.TaskStatus;
-import com.project.taskscheduler.repository.TaskRepository;
+import com.project.taskscheduler.repository.TaskDefinitionRepository;
 import com.project.taskscheduler.utility.TaskUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,18 +20,18 @@ import static com.project.taskscheduler.utility.TaskUtility.parseUuid;
 public class TaskService {
 
     private final Logger logger = LoggerFactory.getLogger(TaskService.class);
-    private final TaskRepository taskRepository;
+    private final TaskDefinitionRepository taskDefinitionRepository;
 
-    public TaskService(TaskRepository taskRepository) {
-        this.taskRepository = taskRepository;
+    public TaskService(TaskDefinitionRepository taskDefinitionRepository) {
+        this.taskDefinitionRepository = taskDefinitionRepository;
     }
 
     public List<TaskDefinition> getAllTasks() {
-        return taskRepository.findAll();
+        return taskDefinitionRepository.findAll();
     }
 
     public TaskDefinition getTaskById(UUID id) {
-        return taskRepository.findById(id)
+        return taskDefinitionRepository.findById(id)
                 .orElseThrow(() -> new TaskNotFoundException("Task not found with id: " + id));
     }
 
@@ -41,7 +41,7 @@ public class TaskService {
             throw new IllegalArgumentException("Invalid cron expression");
         }
         logger.info("Creating task: {}", taskDefinition);
-        return taskRepository.save(taskDefinition);
+        return taskDefinitionRepository.save(taskDefinition);
     }
 
     public TaskDefinition updateTask(String id, TaskDefinition updatedTaskDefinition) {
@@ -59,25 +59,25 @@ public class TaskService {
 
         existingTaskDefinition.setNextRun(TaskUtility.getNextRunFromCron(existingTaskDefinition.getSchedule()));
         logger.info("Updating task: {}", existingTaskDefinition);
-        return taskRepository.save(existingTaskDefinition);
+        return taskDefinitionRepository.save(existingTaskDefinition);
     }
 
     public void deleteTask(String id) {
         TaskDefinition taskDefinition = getTaskById(parseUuid(id));
         logger.info("Deleting task: {}", taskDefinition);
-        taskRepository.delete(taskDefinition);
+        taskDefinitionRepository.delete(taskDefinition);
     }
 
     public List<TaskDefinition> getActiveTasks() {
-        return taskRepository.findByActiveTrue();
+        return taskDefinitionRepository.findByActiveTrue();
     }
 
     public List<TaskDefinition> getTasksByStatus(TaskStatus status) {
-        return taskRepository.findByStatus(status);
+        return taskDefinitionRepository.findByStatus(status);
     }
 
     public Map<String, Object> getTaskStatistics() {
-        List<TaskDefinition> taskDefinitions = taskRepository.findAll();
+        List<TaskDefinition> taskDefinitions = taskDefinitionRepository.findAll();
 
         long activeTasks = taskDefinitions.stream()
                 .filter(TaskDefinition::isActive)

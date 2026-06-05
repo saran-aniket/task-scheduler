@@ -35,9 +35,4 @@ public class TaskScheduleController {
     public ResponseEntity<TaskDefinition> cancelTask(@PathVariable String id) {
         return ResponseEntity.ok(taskSchedulerService.cancelTask(id));
     }
-
-    @PostMapping("/{id}/execute")
-    public ResponseEntity<TaskDefinition> executeTask(@PathVariable String id) {
-        return ResponseEntity.ok(taskSchedulerService.executeTask(id));
-    }
 }

@@ -13,5 +13,5 @@ Accept: application/json
   "schedule": "2000",
   "active": true,
   "status": "ACTIVE",
-  "schedule": "*/10 * * * * *"
+  "schedule": "*/30 * * * * *"
 }

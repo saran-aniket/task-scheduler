@@ -5,6 +5,7 @@ public enum TaskStatus {
     ACTIVE("Active"),
     PAUSED("Paused"),
     CANCELLED("Cancelled"),
+    COMPLETED("Completed"),
     ERROR("Error");
 
 

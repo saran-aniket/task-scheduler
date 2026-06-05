@@ -2,21 +2,23 @@ package com.project.taskscheduler.service;
 
 import com.project.taskscheduler.exception.TaskNotFoundException;
 import com.project.taskscheduler.model.TaskDefinition;
+import com.project.taskscheduler.model.TaskExecution;
+import com.project.taskscheduler.model.TaskExecutionStatus;
 import com.project.taskscheduler.model.TaskStatus;
-import com.project.taskscheduler.repository.TaskRepository;
-import com.project.taskscheduler.utility.TaskUtility;
+import com.project.taskscheduler.repository.TaskDefinitionRepository;
+import com.project.taskscheduler.repository.TaskExecutionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 
+import static com.project.taskscheduler.utility.TaskUtility.getNextRunFromCron;
 import static com.project.taskscheduler.utility.TaskUtility.parseUuid;
 
 @Service
@@ -24,17 +26,19 @@ public class TaskSchedulerService {
 
     private static final Logger logger = LoggerFactory.getLogger(TaskSchedulerService.class);
 
-    private final TaskRepository taskRepository;
+    private final TaskDefinitionRepository taskDefinitionRepository;
+    private final TaskExecutionRepository taskExecutionRepository;
     private final TaskScheduler taskScheduler;
     private final Map<UUID, ScheduledFuture<?>> executions = new HashMap<>();
 
-    public TaskSchedulerService(TaskRepository taskRepository, TaskScheduler taskScheduler, TaskService taskService) {
-        this.taskRepository = taskRepository;
+    public TaskSchedulerService(TaskDefinitionRepository taskDefinitionRepository, TaskScheduler taskScheduler, TaskService taskService, TaskExecutionRepository taskExecutionRepository) {
+        this.taskDefinitionRepository = taskDefinitionRepository;
         this.taskScheduler = taskScheduler;
+        this.taskExecutionRepository = taskExecutionRepository;
     }
 
     public TaskDefinition getTaskById(UUID id) {
-        return taskRepository.findById(id)
+        return taskDefinitionRepository.findById(id)
                 .orElseThrow(() -> new TaskNotFoundException("Task not found with id: " + id));
     }
 
@@ -44,7 +48,7 @@ public class TaskSchedulerService {
         taskDefinition.setActive(false);
         taskDefinition.setStatus(TaskStatus.PAUSED);
 
-        return taskRepository.save(taskDefinition);
+        return taskDefinitionRepository.save(taskDefinition);
     }
 
     public TaskDefinition resumeTask(String id) {
@@ -53,15 +57,59 @@ public class TaskSchedulerService {
         taskDefinition.setActive(true);
         taskDefinition.setStatus(TaskStatus.ACTIVE);
 
-        return taskRepository.save(taskDefinition);
+        return taskDefinitionRepository.save(taskDefinition);
     }
 
-    public TaskDefinition executeTask(String id) {
-        TaskDefinition taskDefinition = getTaskById(parseUuid(id));
+    @Scheduled(fixedDelay = 5000)
+    public void prepareTaskForExecution() {
+        logger.info("Executing scheduled tasks");
+        List<TaskDefinition> taskDefinitionList = taskDefinitionRepository.findAllByStatusAndNextRunBetween(TaskStatus.ACTIVE, LocalDateTime.now(), LocalDateTime.now().plusMinutes(5));
+        List<TaskExecution> existingTaskExecutions = taskExecutionRepository.findAllByTaskExecutionStatus(TaskExecutionStatus.QUEUED);
+        List<TaskExecution> taskExecutionList = new ArrayList<>();
+        for (TaskDefinition taskDefinition : taskDefinitionList) {
+            if (existingTaskExecutions.stream().anyMatch(taskExecution -> taskExecution.getTaskDefinition().getId().equals(taskDefinition.getId()))) {
+                continue;
+            }
+            TaskExecution taskExecution = new TaskExecution();
+            taskExecution.setTaskDefinition(taskDefinition);
+            taskExecution.setExecutionStartTime(LocalDateTime.now());
+            taskExecution.setTaskExecutionStatus(TaskExecutionStatus.QUEUED);
+            taskExecutionList.add(taskExecution);
+        }
+        taskExecutionList = taskExecutionRepository.saveAll(taskExecutionList);
 
-        taskDefinition.setNextRun(LocalDateTime.now());
+        executeQueuedTasks(taskExecutionList);
 
-        return taskRepository.save(taskDefinition);
+    }
+
+    public void executeQueuedTasks(List<TaskExecution> taskExecutionList) {
+        for (TaskExecution taskExecution : taskExecutionList) {
+            TaskDefinition taskDefinition = taskExecution.getTaskDefinition();
+//            ScheduledFuture<?> scheduledFuture =
+            taskScheduler.schedule(() -> {
+
+                logger.info("Execution has started for Task{} at {}", taskExecution.getTaskDefinition().getName(), LocalDateTime.now());
+                try {
+                    taskExecution.setTaskExecutionStatus(TaskExecutionStatus.RUNNING);
+                    logger.info("Execution is running for Task{}", taskExecution.getTaskDefinition().getName());
+                    Thread.sleep(20000);
+                    taskExecution.setTaskExecutionStatus(TaskExecutionStatus.COMPLETED);
+                    logger.info("Execution has completed for Task{} at {}", taskExecution.getTaskDefinition().getName(), LocalDateTime.now());
+                } catch (Exception e) {
+                    taskExecution.setTaskExecutionStatus(TaskExecutionStatus.FAILED);
+                    logger.error("Execution has failed for Task{}", taskExecution.getTaskDefinition().getName(), e);
+//                    throw new RuntimeException(e);
+                }
+                taskExecutionRepository.save(taskExecution);
+
+                //Update Next Run for Task Definition
+                taskDefinition.setNextRun(getNextRunFromCron(taskDefinition.getSchedule()));
+                taskDefinitionRepository.save(taskDefinition);
+
+            }, new CronTrigger(taskDefinition.getSchedule()));
+
+//            executions.put(taskExecution.getId(), scheduledFuture);
+        }
     }
 
     public TaskDefinition cancelTask(String id) {
@@ -71,7 +119,7 @@ public class TaskSchedulerService {
         taskDefinition.setStatus(TaskStatus.CANCELLED);
         taskDefinition.setNextRun(null);
 
-        return taskRepository.save(taskDefinition);
+        return taskDefinitionRepository.save(taskDefinition);
     }
 
 
@@ -85,35 +133,11 @@ public class TaskSchedulerService {
 
         if (taskDefinition.getNextRun() == null) {
             taskDefinition.setNextRun(LocalDateTime.now());
-            taskDefinition = taskRepository.save(taskDefinition);
+            taskDefinition = taskDefinitionRepository.save(taskDefinition);
         }
 
-//        Instant executionTime = taskDefinition.getNextRun()
-//                .atZone(ZoneId.systemDefault())
-//                .toInstant();
-
-
-        TaskDefinition finalTaskDefinition = taskDefinition;
-        ScheduledFuture<?> scheduledFuture = taskScheduler.schedule(() -> {
-
-            if (!finalTaskDefinition.isActive()) {
-                logger.info("TaskDefinition {} is not active. Skipping execution.", finalTaskDefinition.getId());
-                return;
-            }
-
-            logger.info("Execution has started");
-            try {
-                Thread.sleep(10000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            finalTaskDefinition.setLastRun(LocalDateTime.now());
-            finalTaskDefinition.setNextRun(TaskUtility.getNextRunFromCron(finalTaskDefinition.getSchedule()));
-            taskRepository.save(finalTaskDefinition);
-        }, new CronTrigger(taskDefinition.getSchedule()));
 
         logger.info("TaskDefinition {} scheduled for execution at {}", taskDefinition.getId(), taskDefinition.getNextRun());
-        executions.put(taskDefinition.getId(), scheduledFuture);
     }
 
 }

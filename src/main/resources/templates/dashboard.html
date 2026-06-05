@@ -226,7 +226,7 @@
                             <td>
                                 <div class="task-info">
                                     <i class="fas fa-clock task-icon"></i>
-                                    <span th:text="${execution.taskName}">Task Name</span>
+                                    <span th:text="${execution.taskDefinition}">Task Name</span>
                                 </div>
                             </td>
                             <td>
@@ -237,7 +237,7 @@
                                               th:class="${execution.status == 'SUCCESS'} ? 'success' : 'error'"
                                               th:text="${execution.status}">Status</span>
                             </td>
-                            <td th:text="${#temporals.format(execution.executionTime, 'HH:mm:ss')}">Time</td>
+                            <td th:text="${#temporals.format(execution.executionStartTime, 'HH:mm:ss')}">Time</td>
                             <td th:text="${execution.executionDuration + 'ms'}">Duration</td>
                             <td>
                                 <div class="action-buttons">

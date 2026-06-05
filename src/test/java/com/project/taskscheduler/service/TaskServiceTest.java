@@ -4,7 +4,7 @@ import com.project.taskscheduler.exception.TaskNotFoundException;
 import com.project.taskscheduler.model.TaskDefinition;
 import com.project.taskscheduler.model.TaskStatus;
 import com.project.taskscheduler.model.TaskType;
-import com.project.taskscheduler.repository.TaskRepository;
+import com.project.taskscheduler.repository.TaskDefinitionRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,7 +23,7 @@ import static org.mockito.Mockito.*;
 class TaskServiceTest {
 
     @Mock
-    private TaskRepository taskRepository;
+    private TaskDefinitionRepository taskDefinitionRepository;
 
     @InjectMocks
     private TaskService taskService;
@@ -32,13 +32,13 @@ class TaskServiceTest {
     void getAllTasksReturnsTasks() {
         TaskDefinition taskDefinition = createTask();
 
-        when(taskRepository.findAll()).thenReturn(List.of(taskDefinition));
+        when(taskDefinitionRepository.findAll()).thenReturn(List.of(taskDefinition));
 
         List<TaskDefinition> taskDefinitions = taskService.getAllTasks();
 
         assertEquals(1, taskDefinitions.size());
         assertEquals("Test Task", taskDefinitions.getFirst().getName());
-        verify(taskRepository).findAll();
+        verify(taskDefinitionRepository).findAll();
     }
 
     @Test
@@ -47,7 +47,7 @@ class TaskServiceTest {
         TaskDefinition taskDefinition = createTask();
         setId(taskDefinition, id);
 
-        when(taskRepository.findById(id)).thenReturn(Optional.of(taskDefinition));
+        when(taskDefinitionRepository.findById(id)).thenReturn(Optional.of(taskDefinition));
 
         TaskDefinition result = taskService.getTaskById(id);
 
@@ -59,7 +59,7 @@ class TaskServiceTest {
     void getTaskByIdThrowsWhenTaskNotFound() {
         UUID id = UUID.randomUUID();
 
-        when(taskRepository.findById(id)).thenReturn(Optional.empty());
+        when(taskDefinitionRepository.findById(id)).thenReturn(Optional.empty());
 
         assertThrows(TaskNotFoundException.class, () -> taskService.getTaskById(id));
     }
@@ -68,13 +68,13 @@ class TaskServiceTest {
     void createTaskSavesTask() {
         TaskDefinition taskDefinition = createTask();
 
-        when(taskRepository.save(taskDefinition)).thenReturn(taskDefinition);
+        when(taskDefinitionRepository.save(taskDefinition)).thenReturn(taskDefinition);
 
         TaskDefinition result = taskService.createTask(taskDefinition);
 
         assertEquals(TaskStatus.ACTIVE, result.getStatus());
         assertTrue(result.isActive());
-        verify(taskRepository).save(taskDefinition);
+        verify(taskDefinitionRepository).save(taskDefinition);
     }
 
     @Test
@@ -91,8 +91,8 @@ class TaskServiceTest {
                 "2000"
         );
 
-        when(taskRepository.findById(id)).thenReturn(Optional.of(existingTaskDefinition));
-        when(taskRepository.save(existingTaskDefinition)).thenReturn(existingTaskDefinition);
+        when(taskDefinitionRepository.findById(id)).thenReturn(Optional.of(existingTaskDefinition));
+        when(taskDefinitionRepository.save(existingTaskDefinition)).thenReturn(existingTaskDefinition);
 
         TaskDefinition result = taskService.updateTask(id.toString(), updatedTaskDefinition);
 
@@ -100,7 +100,7 @@ class TaskServiceTest {
         assertEquals("Updated Description", result.getDescription());
         assertEquals(TaskType.FIXED_DELAY, result.getType());
         assertEquals("2000", result.getSchedule());
-        verify(taskRepository).save(existingTaskDefinition);
+        verify(taskDefinitionRepository).save(existingTaskDefinition);
     }
 
     @Test
@@ -110,11 +110,11 @@ class TaskServiceTest {
         TaskDefinition taskDefinition = createTask();
         setId(taskDefinition, id);
 
-        when(taskRepository.findById(id)).thenReturn(Optional.of(taskDefinition));
+        when(taskDefinitionRepository.findById(id)).thenReturn(Optional.of(taskDefinition));
 
         taskService.deleteTask(id.toString());
 
-        verify(taskRepository).delete(taskDefinition);
+        verify(taskDefinitionRepository).delete(taskDefinition);
     }
 
 //    @Test

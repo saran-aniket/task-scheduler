@@ -1,35 +1,98 @@
 package com.project.taskscheduler.model;
 
+import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 
-public class TaskExecution {
-    private String taskName;
+@Entity
+@Table(name = "task_executions")
+public class TaskExecution extends BaseModel {
+    @ManyToOne(fetch = FetchType.LAZY)
+    private TaskDefinition taskDefinition;
     private String executionType;
-    private LocalDateTime executionTime;
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private TaskExecutionStatus taskExecutionStatus;
+    private LocalDateTime executionStartTime;
+    private LocalDateTime executionEndTime;
     private long executionDuration;
+    private int attemptCount;
+    private String errorMessage;
 
-    public TaskExecution(String taskName, String executionType, LocalDateTime executionTime, String status, long executionDuration) {
-        this.taskName = taskName;
+    public TaskExecution() {
+
+    }
+
+    public TaskExecution(TaskDefinition taskDefinition, String executionType, LocalDateTime executionStartTime, long executionDuration) {
+        this.taskDefinition = taskDefinition;
         this.executionType = executionType;
-        this.executionTime = executionTime;
-        this.status = status;
+        this.executionStartTime = executionStartTime;
         this.executionDuration = executionDuration;
     }
 
+
     // Getters and Setters
-    public String getTaskName() { return taskName; }
-    public void setTaskName(String taskName) { this.taskName = taskName; }
+    public TaskDefinition getTaskDefinition() {
+        return taskDefinition;
+    }
 
-    public String getExecutionType() { return executionType; }
-    public void setExecutionType(String executionType) { this.executionType = executionType; }
+    public void setTaskDefinition(TaskDefinition taskDefinition) {
+        this.taskDefinition = taskDefinition;
+    }
 
-    public LocalDateTime getExecutionTime() { return executionTime; }
-    public void setExecutionTime(LocalDateTime executionTime) { this.executionTime = executionTime; }
+    public String getExecutionType() {
+        return executionType;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public void setExecutionType(String executionType) {
+        this.executionType = executionType;
+    }
 
-    public long getExecutionDuration() { return executionDuration; }
-    public void setExecutionDuration(long executionDuration) { this.executionDuration = executionDuration; }
+    public LocalDateTime getExecutionStartTime() {
+        return executionStartTime;
+    }
+
+    public void setExecutionStartTime(LocalDateTime executionStartTime) {
+        this.executionStartTime = executionStartTime;
+    }
+
+    public LocalDateTime getExecutionEndTime() {
+        return executionEndTime;
+    }
+
+    public void setExecutionEndTime(LocalDateTime executionEndTime) {
+        this.executionEndTime = executionEndTime;
+    }
+
+    public long getExecutionDuration() {
+        return executionDuration;
+    }
+
+    public void setExecutionDuration(long executionDuration) {
+        this.executionDuration = executionDuration;
+    }
+
+    public int getAttemptCount() {
+        return attemptCount;
+    }
+
+    public void setAttemptCount(int attemptCount) {
+        this.attemptCount = attemptCount;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
+
+    public TaskExecutionStatus getTaskExecutionStatus() {
+        return taskExecutionStatus;
+    }
+
+    public void setTaskExecutionStatus(TaskExecutionStatus taskExecutionStatus) {
+        this.taskExecutionStatus = taskExecutionStatus;
+    }
+
 }

@@ -105,22 +105,6 @@ class TaskScheduleControllerTest {
         verify(taskSchedulerService).cancelTask(id.toString());
     }
 
-    @Test
-    void executeTaskReturnsExecutedTask() throws Exception {
-        UUID id = UUID.randomUUID();
-
-        TaskDefinition taskDefinition = createTask();
-        setId(taskDefinition, id);
-
-        when(taskSchedulerService.executeTask(id.toString())).thenReturn(taskDefinition);
-
-        mockMvc.perform(post("/api/task-schedules/{id}/execute", id))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Test Task"));
-
-        verify(taskSchedulerService).executeTask(id.toString());
-    }
-
     private TaskDefinition createTask() {
         return new TaskDefinition(
                 "Test Task",
